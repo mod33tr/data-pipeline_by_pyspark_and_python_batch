@@ -1,0 +1,31 @@
+{
+  "run_id": "75a285a1-f54b-49ff-b2ee-f76c6bd1a59a",
+  "file_name": "orders_sample.csv",
+  "file_size_mb": 209.2,
+  "engine_used": "pyspark",
+  "rows_read": 500000,
+  "raw_loaded": 500000,
+  "valid_count": 3728,
+  "corrected_count": 437602,
+  "quarantine_count": 58670,
+  "elapsed_seconds": 27.88,
+  "throughput": 17931.48,
+  "batch_size": "N/A",
+  "partitions": "N/A",
+  "error_case_counts": {
+    "UNKNOWN_PRICE": 20161,
+    "INVALID_IMPOSSIBLE_DATE": 14581,
+    "MISSING_ORDER_ID": 3506,
+    "CORRUPTED_ITEMS_JSON": 6866,
+    "INVALID_EMAIL": 6906,
+    "MISSING_CUSTOMER_ID": 7070,
+    "MULTIPLE_CONFLICTING_ERRORS": 3461,
+    "EMPTY_ITEMS": 3487,
+    "AMBIGUOUS_NEGATIVE_VALUE": 3392,
+    "DUPLICATE_ORDER_ID": 3084
+  },
+  "inserted_count": 0,
+  "updated_count": 441330,
+  "unchanged_count": 0,
+  "timestamp": "2026-08-23T22:34:28.778818"
+}
