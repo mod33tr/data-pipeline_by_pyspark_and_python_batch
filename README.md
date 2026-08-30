@@ -9,6 +9,17 @@ The system automatically selects the processing engine based on file size:
 
 The pipeline ingests dirty CSV data into a MongoDB `Raw` layer, applies 9 data quality rules, and routes records to either `Validated` (with Audit Trail) or `Quarantine` collections, ensuring strict **Idempotency** via Upserts.
 
+
+## 👥 Team & Work Division
+
+| Member | Ownership | Key Files |
+|--------|-----------|-----------|
+|Mohameed Hizam | PySpark engine, File Router, Metrics, Path B (Incremental) | spark_loader.py, file_router.py, metrics.py, incremental_loader.py, run_delta.py |
+|Mohameed Adnan| Python Batch engine, Quality Rules, ELT Pipeline, MongoDB Setup | batch_loader.py, quality_rules.py, elt_pipeline.py, mongo_setup.py, create_small_sample.py |
+
+> Both members understand the full pipeline end-to-end and can explain any component.
+
+
 ## 🏗️ Architecture
 
 Dirty CSV --> File Router --> [Python Batch | PySpark] --> orders_raw (MongoDB)
