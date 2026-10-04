@@ -1,16 +1,14 @@
 import os
-import sys
 import time
 from pathlib import Path
 from datetime import datetime, timezone
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
-from pyspark.sql.functions import lit, to_json, struct
+from pyspark.sql.functions import lit, to_json, struct, col as scol, count as scount
 
 from config.settings import MONGODB_URI, DB_NAME, RAW_COLLECTION
 from pymongo import MongoClient
 
-# 🔥 الإصدار الصحيح المتوافق مع PySpark 4.0 (Scala 2.13)
 MONGO_CONNECTOR_PKG = "org.mongodb.spark:mongo-spark-connector_2.13:10.5.0"
 
 def init_spark():
@@ -18,7 +16,7 @@ def init_spark():
         .master("local[*]")
         .appName("HybridPipeline_Spark_RawLoad")
         .config("spark.driver.host", "127.0.0.1")
-        .config("spark.driver.memory", "4g")
+        .config("spark.driver.memory", "8g")
         .config("spark.driver.maxResultSize", "2g")
         .config("spark.jars.packages", MONGO_CONNECTOR_PKG)
         .config("spark.mongodb.connection.uri", MONGODB_URI)
@@ -30,6 +28,10 @@ def init_spark():
 def load_csv_spark(file_path, run_id, engine_name="pyspark"):
     print(f"\n🚀 بدء قراءة الملف الضخم ومعالجته باستخدام PySpark...")
     spark = init_spark()
+
+    # 🔥 التقسيمات تتدرج مع حجم الملف
+    size_mb = os.path.getsize(file_path) / (1024 * 1024)
+    partitions = 50 if size_mb <= 1024 else 200
 
     file_uri = Path(file_path).resolve().as_uri()
     print(f"📂 مسار القراءة: {file_uri}")
@@ -63,6 +65,15 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
         .schema(schema) \
         .load(file_uri)
 
+    # 🔥 اكتشاف المعرفات المكررة داخل Spark (ذاكرة صغيرة تُمرر للمرحلة التالية)
+    dup_rows = (df.groupBy("order_id")
+                .agg(scount("*").alias("c"))
+                .filter((scol("c") > 1) & scol("order_id").isNotNull())
+                .select("order_id")
+                .collect())
+    duplicate_ids = [r["order_id"] for r in dup_rows]
+    print(f"🔁 معرفات مكررة مكتشفة في المصدر: {len(duplicate_ids):,}")
+
     original_cols = df.columns
     df_raw = df.withColumn("run_id", lit(run_id)) \
                .withColumn("source_file", lit(os.path.basename(file_path))) \
@@ -74,11 +85,9 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
     df_raw_final = df_raw.select("run_id", "source_file", "source_row_number",
                                   "ingested_at", "engine_used", "raw_record")
 
-    # تبرير الـ repartition: استقرار الذاكرة + إثبات الأثر في Spark UI (متطلب 6.4)
-    df_raw_final = df_raw_final.repartition(50)
+    df_raw_final = df_raw_final.repartition(partitions)
     print(f"📊 عدد التقسيمات (Partitions): {df_raw_final.rdd.getNumPartitions()}")
 
-    # 🔥 المحاولة 1: الكتابة المتوازية عبر MongoDB Spark Connector (متطلب 6.4)
     write_mode = "mongo_spark_connector"
     try:
         print("📦 محاولة الكتابة المتوازية عبر MongoDB Spark Connector (10.5.0 / Scala 2.13)...")
@@ -88,7 +97,6 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
             .save()
         print("✅ نجحت الكتابة عبر MongoDB Spark Connector!")
     except Exception as e:
-        # 🔥 المحاولة 2 (شبكة الأمان): Micro-batching عبر toLocalIterator
         print(f"⚠️ Connector تعذر في بيئة Windows ({type(e).__name__})")
         print("🔄 تفعيل البديل الهندسي: toLocalIterator + pymongo")
         write_mode = "local_iterator_fallback"
@@ -112,8 +120,8 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
         finally:
             client.close()
 
-    elapsed = time.perf_counter() - start_time
     row_count = df_raw_final.count()
+    elapsed = time.perf_counter() - start_time
     throughput = row_count / elapsed if elapsed > 0 else 0
 
     print("\n" + "=" * 50)
@@ -124,8 +132,14 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
     print(f"معدل المعالجة           : {throughput:,.0f} سجل/ثانية")
     print("=" * 50)
 
-    print("\n⏸️ افتح المتصفح على http://localhost:4040 والتقط لقطة Stages (لإثبات أثر الـ repartition).")
-    input("اضغط Enter لإيقاف Spark والمتابعة...")
+    # الانتظار لالتقاط Spark UI فقط في الجلسات التفاعلية من الطرفية (لا يعطل الـ API أو الاختبارات الآلية)
+    import sys
+    if sys.stdin and sys.stdin.isatty() and not os.getenv("NON_INTERACTIVE"):
+        try:
+            print("\n⏸️ افتح المتصفح على http://localhost:4040 والتقط لقطة Stages.")
+            input("اضغط Enter لإيقاف Spark والمتابعة...")
+        except (EOFError, KeyboardInterrupt):
+            pass
 
     try:
         spark.stop()
@@ -137,6 +151,7 @@ def load_csv_spark(file_path, run_id, engine_name="pyspark"):
         "raw_loaded": row_count,
         "elapsed_seconds": elapsed,
         "throughput": throughput,
-        "write_mode": write_mode
-        
+        "write_mode": write_mode,
+        "partitions": partitions,
+        "duplicate_ids": duplicate_ids
     }

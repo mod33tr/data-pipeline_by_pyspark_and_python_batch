@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-10-04T21:23:48.711864+00:00",
+  "totals": {
+    "validated": 26461561,
+    "quarantined": 3538441
+  },
+  "status_distribution": {
+    "تم التسليم": 4373011,
+    "confirmed": 4375752,
+    "قيد الشحن": 4377241,
+    "مرتجع": 4374068,
+    "pending": 4376253,
+    "حالة غير معروفة تمامًا": 209400,
+    "ملغي": 4375835,
+    "تم الشحن": 1
+  },
+  "error_distribution": {
+    "UNKNOWN_PRICE": 1212704,
+    "INVALID_IMPOSSIBLE_DATE": 878675,
+    "CORRUPTED_ITEMS_JSON": 419906,
+    "MISSING_CUSTOMER_ID": 419475,
+    "INVALID_EMAIL": 418710,
+    "AMBIGUOUS_NEGATIVE_VALUE": 210021,
+    "EMPTY_ITEMS": 209935,
+    "MULTIPLE_CONFLICTING_ERRORS": 209433,
+    "MISSING_ORDER_ID": 209392,
+    "DUPLICATE_ORDER_ID": 187924
+  }
+}

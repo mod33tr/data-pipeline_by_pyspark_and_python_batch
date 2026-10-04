@@ -85,12 +85,13 @@ def _parse_price_to_number(value):
     
 
 def _normalize_phone(phone):
-    """القاعدة 5: توحيد رقم الهاتف"""
+    """القاعدة 5: توحيد رقم الهاتف (الأرقام والمسافات)"""
     if not phone:
         return phone, False
     phone = str(phone).strip()
+    latin_phone = _arabic_to_latin(phone)
     # إزالة المسافات والشرطات
-    cleaned = re.sub(r"[\s\-\(\)]", "", phone)
+    cleaned = re.sub(r"[\s\-\(\)]", "", latin_phone)
     return cleaned, (cleaned != phone)
 
 def _normalize_email(email):
@@ -270,17 +271,7 @@ def apply_quality_rules(raw_record: dict) -> dict:
     if parsed_items is not None:
         del record["items_json"]  # استبدلنا النص بـ parsed array
     
-    # === تحديد الحالة النهائية ===
-    if error_codes:
-        status = "quarantined"
-    elif corrections:
-        status = "corrected"
-    else:
-        status = "valid"
-        
-        
-        
-        # === القاعدة 9: إعادة حساب إجمالي الطلب ===
+    # === القاعدة 9: إعادة حساب إجمالي الطلب ===
     if record.get("items") and record.get("delivery_cost") is not None:
         try:
             items_total = 0.0
@@ -312,16 +303,21 @@ def apply_quality_rules(raw_record: dict) -> dict:
                     record["total_amount"] = expected_total
         except Exception:
             pass  # إذا فشل الحساب، نتجاهل ولا نعزل السجل
-    
-    # === التحقق من التكرار في نفس التشغيل (سيتم في pipeline) ===
-    
-        # === القاعدة الصارمة: الأخطاء المتضاربة (القسم 6.8) ===
+
+    # === القاعدة الصارمة: الأخطاء المتضاربة (القسم 6.8) ===
     # إذا تجمع خطآن جوهريان أو أكثر، يصبح السجل غير قابل للتصحيح الآمن
     if len(error_codes) >= 2:
         if "MULTIPLE_CONFLICTING_ERRORS" not in error_codes:
             error_codes.append("MULTIPLE_CONFLICTING_ERRORS")
-            # إجبار الحالة على العزل إذا لم تكن معزولة بالفعل
-            status = "quarantined" 
+
+    # === تحديد الحالة النهائية (بعد تطبيق جميع القواعد بما فيها إجمالي الطلب) ===
+    if error_codes:
+        status = "quarantined"
+    elif corrections:
+        status = "corrected"
+    else:
+        status = "valid"
+
     return {
         "record": record,
         "corrections": corrections,

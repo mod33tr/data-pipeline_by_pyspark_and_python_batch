@@ -1,0 +1,101 @@
+{
+  "generated_at": "2026-10-04T00:22:06.871131+00:00",
+  "queries": {
+    "orders_by_city_status": {
+      "before": {
+        "executionTimeMillis": 64463,
+        "totalDocsExamined": 26461560,
+        "totalKeysExamined": 0,
+        "nReturned": 50,
+        "stages": [
+          "PROJECTION_SIMPLE",
+          "SORT",
+          "COLLSCAN"
+        ],
+        "winning_plan_stage": "PROJECTION_SIMPLE"
+      },
+      "after": {
+        "executionTimeMillis": 1000,
+        "totalDocsExamined": 2920,
+        "totalKeysExamined": 2920,
+        "nReturned": 50,
+        "stages": [
+          "LIMIT",
+          "PROJECTION_SIMPLE",
+          "FETCH",
+          "IXSCAN"
+        ],
+        "winning_plan_stage": "LIMIT"
+      },
+      "improvement": {
+        "docs_examined": "26,461,560 → 2,920",
+        "stage": "['PROJECTION_SIMPLE', 'SORT', 'COLLSCAN'] → ['LIMIT', 'PROJECTION_SIMPLE', 'FETCH', 'IXSCAN']",
+        "time_ms": "64463 → 1000"
+      }
+    },
+    "customer_order_history": {
+      "before": {
+        "executionTimeMillis": 50814,
+        "totalDocsExamined": 26461560,
+        "totalKeysExamined": 0,
+        "nReturned": 1,
+        "stages": [
+          "PROJECTION_SIMPLE",
+          "SORT",
+          "COLLSCAN"
+        ],
+        "winning_plan_stage": "PROJECTION_SIMPLE"
+      },
+      "after": {
+        "executionTimeMillis": 2,
+        "totalDocsExamined": 1,
+        "totalKeysExamined": 1,
+        "nReturned": 1,
+        "stages": [
+          "PROJECTION_SIMPLE",
+          "SORT",
+          "FETCH",
+          "IXSCAN"
+        ],
+        "winning_plan_stage": "PROJECTION_SIMPLE"
+      },
+      "improvement": {
+        "docs_examined": "26,461,560 → 1",
+        "stage": "['PROJECTION_SIMPLE', 'SORT', 'COLLSCAN'] → ['PROJECTION_SIMPLE', 'SORT', 'FETCH', 'IXSCAN']",
+        "time_ms": "50814 → 2"
+      }
+    },
+    "paid_orders_in_date_range": {
+      "before": {
+        "executionTimeMillis": 61043,
+        "totalDocsExamined": 26461560,
+        "totalKeysExamined": 0,
+        "nReturned": 50,
+        "stages": [
+          "PROJECTION_SIMPLE",
+          "SORT",
+          "COLLSCAN"
+        ],
+        "winning_plan_stage": "PROJECTION_SIMPLE"
+      },
+      "after": {
+        "executionTimeMillis": 3,
+        "totalDocsExamined": 50,
+        "totalKeysExamined": 50,
+        "nReturned": 50,
+        "stages": [
+          "LIMIT",
+          "PROJECTION_SIMPLE",
+          "FETCH",
+          "IXSCAN"
+        ],
+        "winning_plan_stage": "LIMIT"
+      },
+      "improvement": {
+        "docs_examined": "26,461,560 → 50",
+        "stage": "['PROJECTION_SIMPLE', 'SORT', 'COLLSCAN'] → ['LIMIT', 'PROJECTION_SIMPLE', 'FETCH', 'IXSCAN']",
+        "time_ms": "61043 → 3"
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.quality_rules import apply_quality_rules
@@ -22,5 +24,5 @@ result = apply_quality_rules(test_record)
 print("Status:", result["status"])
 print("Corrections:", len(result["corrections"]))
 for c in result["corrections"]:
-    print(f"  - {c['field']}: {c['original_value']} → {c['corrected_value']} ({c['rule_code']})")
+    print(f"  - {c['field']}: {c['original_value']} -> {c['corrected_value']} ({c['rule_code']})")
 print("Errors:", result["error_codes"])

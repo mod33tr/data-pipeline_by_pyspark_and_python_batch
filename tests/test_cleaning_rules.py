@@ -74,5 +74,23 @@ def test_quarantine_missing_order_id():
     assert result["status"] == "quarantined"
     assert "MISSING_ORDER_ID" in result["error_codes"]
 
+def test_total_amount_recalculation():
+    record = {
+        "order_id": "ORD-RECALC",
+        "order_date": "2025-01-01T10:00:00",
+        "status": "confirmed",
+        "customer_id": "C-5",
+        "customer_phone": "777123456",
+        "customer_email": "test@example.com",
+        "delivery_cost": "5000",
+        "payment_amount": "20000",
+        "total_amount": "99999",  # إجمالي خاطئ يحتاج إعادة حساب
+        "items_json": '[{"sku":"S1","qty":2,"unit_price":10000}]'
+    }
+    result = apply_quality_rules(record)
+    assert result["status"] == "corrected"
+    assert result["record"]["total_amount"] == 25000.0  # 2 * 10000 + 5000
+    assert any(c["rule_code"] == "TOTAL_RECALCULATION" for c in result["corrections"])
+
 if __name__ == "__main__":
     pytest.main()
